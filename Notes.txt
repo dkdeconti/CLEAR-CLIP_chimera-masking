@@ -1,0 +1,10 @@
+For testing:
+1. subsample fastq
+    seqtk sample -s100 read_1.fq 10000 > sub1.fq
+    ...
+2. interleave fastqs
+    interleave_fq.py sub1.fq sub2.fq > sub.fq
+3. convert to fasta
+    seqtk seq -a sub.fq > sub.fa
+4. index fasta
+    bowtie 

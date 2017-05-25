@@ -8,3 +8,11 @@ For testing:
     seqtk seq -a sub.fq > sub.fa
 4. index fasta
     bowtie 
+5. align miR to indexed reads fasta
+    bowtie -n 1 -l 8 -e 35 -a -f --sam
+6. demux the reads
+    python demux_chimeras.py -s $SAM $INTERLAVED_FASTQ
+7. align reads to genome
+    bowtie
+8. genomicranges (R) to create bed file
+9. feed bed into mirBSHunter

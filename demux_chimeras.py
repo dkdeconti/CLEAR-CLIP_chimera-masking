@@ -106,22 +106,17 @@ def find_first_last(inverted_map):
     return mir_map
 
 
-def invert_map_bam(bam, is_sam_format):
+def invert_map_bam(samfile, reference_name):
     '''
     Reverse maps the miR in BAM to FASTQ headers.
     '''
-    if is_sam_format:
-        input_format = "r"
-    else:
-        input_format = "rb"
     inverted_map = defaultdict(list)
-    with pysam.AlignmentFile(bam, input_format) as samfile:
-        for read in samfile.fetch():
-            if read.is_unmapped:
-                continue
-            inverted_map[read.reference_name].append((read.query_name,
-                                                      read.reference_start,
-                                                      read.reference_end))
+    for read in samfile.fetch(reference=reference_name):
+        if read.is_unmapped:
+            continue
+        inverted_map[read.reference_name].append((read.query_name,
+                                                  read.reference_start,
+                                                  read.reference_end))
     return inverted_map
 
 
@@ -143,9 +138,15 @@ def main():
                         help="name of output fastq [default: stdout]")
     args = parser.parse_args()
     # Central dispatch
-    bam2fq_map = invert_map_bam(args.BAM, args.sam)
-    mirlen_map = determine_demux(bam2fq_map)
-    demuxed_reads = demux_reads(args.FASTQ, mirlen_map)
+    if args.sam:
+        input_format = 'r'
+    else:
+        input_format = 'rb'
+    with pysam.AlignmentFile(args.BAM, input_format) as samfile:
+        for reference_name in samfile.references:
+            bam2fq_map = invert_map_bam(samfile, reference_name)
+            mirlen_map = determine_demux(bam2fq_map)
+            demuxed_reads = demux_reads(args.FASTQ, mirlen_map)
     if args.name:
         with open(args.name, 'w') as handle:
             SeqIO.write(demuxed_reads, handle, "fastq")

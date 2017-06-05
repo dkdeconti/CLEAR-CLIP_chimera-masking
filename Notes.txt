@@ -8,6 +8,10 @@ For testing:
     seqtk seq -a sub.fq > sub.fa
 4. index fasta
     bowtie 
+    docker run -t \
+    -v /ifs/labs/cccb/projects/cccb/projects/2017/4/REF_04182017_1287/test:/home/ \
+    -i --entrypoint=/bin/bash bowtie-build \
+    
 5. align miR to indexed reads fasta
     bowtie -n 1 -l 8 -e 35 -a -f --sam
 6. demux the reads

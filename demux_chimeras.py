@@ -142,11 +142,17 @@ def main():
         input_format = 'r'
     else:
         input_format = 'rb'
+    final_mirlen_map = defaultdict(list)
     with pysam.AlignmentFile(args.BAM, input_format) as samfile:
         for reference_name in samfile.references:
             bam2fq_map = invert_map_bam(samfile, reference_name)
+            if not bam2fq_map:
+                continue
             mirlen_map = determine_demux(bam2fq_map)
-            demuxed_reads = demux_reads(args.FASTQ, mirlen_map)
+            if not mirlen_map:
+                continue
+            final_mirlen_map.update(mirlen_map)
+    demuxed_reads = demux_reads(args.FASTQ, final_mirlen_map)
     if args.name:
         with open(args.name, 'w') as handle:
             SeqIO.write(demuxed_reads, handle, "fastq")

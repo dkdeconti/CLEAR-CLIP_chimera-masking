@@ -5,6 +5,7 @@ Interleaves paired fastq reads.
 '''
 
 import argparse
+import gzip
 import itertools
 import sys
 from Bio import SeqIO
@@ -41,8 +42,8 @@ def main():
                         help="format of files [default: fastq]")
     args = parser.parse_args()
     # function dispatching
-    records_f = SeqIO.parse(open(args.first, 'rU'), args.format)
-    records_r = SeqIO.parse(open(args.second, 'rU'), args.format)
+    records_f = SeqIO.parse(gzip.open(args.first, 'rU'), args.format)
+    records_r = SeqIO.parse(gzip.open(args.second, 'rU'), args.format)
     if args.name:
         with open(args.name, 'w') as handle:
             SeqIO.write(interleave(records_f, records_r), handle, args.format)

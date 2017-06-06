@@ -22,9 +22,12 @@ def determine_chimeric(first, second, samfile):
     '''
     try:
         first_map = get_read_map(samfile.fetch(reference=first.id))
+    except ValueError:
+        first_map = None
+    try:
         second_map = get_read_map(samfile.fetch(reference=second.id))
     except ValueError:
-        return None
+        second_map = None
     if not first_map and not second_map:
         return None
     first_best, second_best = None, None

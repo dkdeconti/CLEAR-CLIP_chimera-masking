@@ -33,17 +33,20 @@ def determine_chimeric(first, second, samfile):
     first_best, second_best = None, None
     if first_map:
         first_best = filter_aln_to_best(first_map)
-        if first_best[0] > 1: first_best = None
+        if first_best[1] > 1: first_best = None
     if second_map:
         second_best = filter_aln_to_best(second_map)
-        if second_best[0] > 1: second_best = None
+        if second_best[1] > 1: second_best = None
     if first_best and second_best:
-        return first_best <= second_best, min((first_best, second_best),
-                                              key=operator.itemgetter(0))[1]
+        return first_best <= second_best, \
+        min((first_best, second_best),
+             key=operator.itemgetter(0))[2], \
+        min((first_best, second_best),
+             key=operator.itemgetter(0))[0]
     elif first_best:
-        return True, first_best[1]
+        return True, first_best[2], first_best[0]
     elif second_best:
-        return False, second_best[1]
+        return False, second_best[2], second_best[0]
     else:
         return None
 
@@ -62,7 +65,7 @@ def filter_aln_to_best(read_map):
     best_per_mir = {k : min(v, key=operator.itemgetter(0))
                     for k, v in read_map.items()}
     best_mir = min(best_per_mir.items(), key=lambda x: x[1][0])[0]
-    return best_per_mir[best_mir]
+    return best_mir, best_per_mir[best_mir][0], best_per_mir[best_mir][1]
 
 
 def get_min_aln(aln_map):
@@ -110,10 +113,14 @@ def main():
                         help="FASTQ of the chimeric reads")
     parser.add_argument("-s", "--sam", action="store_true",
                         help="Input is in SAM format")
-    #parser.add_argument("-n", "--name", metavar="OUTPUT_NAME",
-    #                    default=None,
-    #                    help="name of output fastq [default: stdout]")
+    parser.add_argument("-n", "--name", metavar="OUTPUT_NAME",
+                        default=None,
+                        help="name of output fastq [default: BAM]")
     args = parser.parse_args()
+    if not args.name:
+        output_base = args.BAM
+    else:
+        output_base = args.name
     if args.sam:
         input_format = 'r'
     else:
@@ -123,7 +130,7 @@ def main():
     with pysam.AlignmentFile(args.BAM, input_format) as samfile:
         for first, second in fastq_iter:
             try:
-                is_first, pos = determine_chimeric(first, second, samfile)
+                is_first, pos, mir = determine_chimeric(first, second, samfile)
             except TypeError:
                 continue
             if is_first:
@@ -135,7 +142,10 @@ def main():
             out_handle = StringIO()
             SeqIO.write((first_out, second_out), out_handle, "fastq")
             data = out_handle.getvalue()
-            sys.stdout.write(data)
+            out_name = '.'.join([output_base, mir, "fastq"])
+            with open(out_name, 'a') as handle:
+                handle.write(data)
+            #sys.stdout.write(data)
 
 
 if __name__ == "__main__":
